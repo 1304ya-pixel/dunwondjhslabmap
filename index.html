@@ -319,7 +319,6 @@ const DEFAULT_ITEMS = [
 
 // ----- 상태 -----
 const KEY = "lab-inv-v3";
-const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzJke8hIGeEq_Xe1J2ZGTQfCr4hGoR16EYCWq7d0BzaGGNjgkyghxdUb88aKUgKxqdv/exec";
 let state;
 function load(){
   try{
@@ -328,33 +327,7 @@ function load(){
   }catch(e){}
   state = {cats:JSON.parse(JSON.stringify(DEFAULT_CATS)), labs:JSON.parse(JSON.stringify(DEFAULT_LABS)), items:JSON.parse(JSON.stringify(DEFAULT_ITEMS))};
 }
-function save(){
-  try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
-  syncToCloud();
-}
-function syncToCloud(){
-  if(!SCRIPT_URL) return;
-  fetch(SCRIPT_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({ action: "save", state: state })
-  }).catch(e=>{ console.warn("클라우드 저장 실패(오프라인일 수 있음):", e); });
-}
-function syncFromCloud(){
-  if(!SCRIPT_URL) return;
-  fetch(SCRIPT_URL)
-    .then(r=>r.json())
-    .then(data=>{
-      if(data && data.ok && data.state && data.state.labs){
-        state = data.state;
-        try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){}
-        renderAll();
-      } else if(data && data.ok && !data.state){
-        syncToCloud(); // 클라우드가 비어있으면 현재 데이터를 최초 1회 업로드
-      }
-    })
-    .catch(e=>{ console.warn("클라우드 불러오기 실패(오프라인일 수 있음):", e); });
-}
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} }
 load();
 
 let activeTab = "map", activeSub = "cats", manageMode = false, selected = new Set();
@@ -924,7 +897,8 @@ $("#sel-clear").onclick = ()=>{ selected.clear(); renderSearch(); };
 $("#sel-delete").onclick = bulkDelete;
 
 renderAll();
-syncFromCloud();
+
+function postSize(){
   try{ parent.postMessage({type:"wrks:viz:resize", height: document.documentElement.scrollHeight}, "*"); }catch(e){}
 }
 window.addEventListener("load", postSize);
